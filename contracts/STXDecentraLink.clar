@@ -109,3 +109,92 @@
         (err u13) ;; Post not found
     )
 )
+
+;; Function to follow a user
+(define-public (follow-user (user-to-follow principal))
+    (let (
+        (caller tx-sender)
+        (caller-profile (unwrap! (map-get? user-profiles caller) (err u3)))
+        (follow-profile (unwrap! (map-get? user-profiles user-to-follow) (err u4)))
+    )
+        (asserts! (not (is-eq caller user-to-follow)) (err u14)) ;; Can't follow yourself
+        (asserts! (< (len (get following caller-profile)) u1000) (err u5)) ;; Cannot follow more than 1000 users
+        (let (
+            (new-following (unwrap! (as-max-len? (append (get following caller-profile) user-to-follow) u1000) (err u6)))
+            (new-followers (unwrap! (as-max-len? (append (get followers follow-profile) caller) u1000) (err u7)))
+        )
+            (map-set user-profiles caller (merge caller-profile {following: new-following}))
+            (ok (map-set user-profiles user-to-follow (merge follow-profile {followers: new-followers})))
+        )
+    )
+)
+
+;; Function to get user profile
+(define-read-only (get-profile (user principal))
+    (map-get? user-profiles user)
+)
+
+;; Function to get post details
+(define-read-only (get-post (post-id uint))
+    (map-get? posts post-id)
+)
+
+;; Function to add a comment to a post
+(define-public (add-comment (post-id uint) (content (string-utf8 280)))
+    (let (
+        (caller tx-sender)
+        (comment-id (+ (var-get comment-id-counter) u1))
+    )
+        (asserts! (>= (len content) u1) (err u15)) ;; Content must not be empty
+        (match (map-get? posts post-id)
+            post (begin
+                (var-set comment-id-counter comment-id)
+                (map-set comments comment-id {
+                    author: caller,
+                    post-id: post-id,
+                    content: content,
+                    timestamp: stacks-block-height,
+                    is-flagged: false,
+                    flags-count: u0
+                })
+                (let ((new-comments (unwrap! (as-max-len? (append (get comments post) comment-id) u100) (err u9))))
+                    (ok (map-set posts post-id (merge post {comments: new-comments})))
+                )
+            )
+            (err u16) ;; Post not found
+        )
+    )
+)
+
+;; Function to get comment details
+(define-read-only (get-comment (comment-id uint))
+    (map-get? comments comment-id)
+)
+
+;; Function to get all comments for a specific post
+(define-read-only (get-post-comments (post-id uint))
+    (match (map-get? posts post-id)
+        post (ok (map get-comment (get comments post)))
+        (err u10)  ;; Post not found
+    )
+)
+
+;; Function to flag a post
+(define-public (flag-post (post-id uint))
+    (let (
+        (caller tx-sender)
+    )
+        (match (map-get? posts post-id)
+            post (let (
+                (new-flags-count (+ (get flags-count post) u1))
+                (updated-post (merge post {
+                    flags-count: new-flags-count,
+                    is-flagged: (> new-flags-count u5)
+                }))
+            )
+                (ok (map-set posts post-id updated-post))
+            )
+            (err u18) ;; Post not found
+        )
+    )
+)
