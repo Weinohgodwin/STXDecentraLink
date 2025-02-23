@@ -1,7 +1,7 @@
 # STXDecentraLink Smart Contract
 
 ## Overview
-CipherSocial is a decentralized social media platform built on the Stacks blockchain. It enables users to create profiles, post content, follow other users, like posts, and comment. The platform includes a moderation system where users can flag inappropriate posts and comments, and admins have the authority to remove flagged content.
+STXDecentraLink is a decentralized social media platform built on the Stacks blockchain. It enables users to create profiles, post content, follow other users, like posts, and comment. The platform includes a moderation system where users can flag inappropriate posts and comments, and admins have the authority to remove flagged content.
 
 ## Features
 - **User Management**: Users can create profiles, follow others, and update their bio.
